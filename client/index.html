@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css">
+  <title>Host monitoring system</title>
+</head>
+<body>
+  <h1 class="center-align">Host System Status</h1>
+  <div class="container">
+    <a class="waves-effect waves-light btn-large" onclick="fetchsysinfo()">Fetch Current CPU Status</a>
+    <br> <br>
+    <div class="row">
+      <div class="col s12 m12">
+        <div class="card indigo darken-4">
+          <div class="card-content white-text">
+            <span class="card-title">Host CPU Information</span>
+            <table>
+              <thead>
+                <tr>
+                  <th>Key</th>
+                  <th>value</th>
+                </tr>
+              </thead>
+              <tbody id="cpu-info">
+                <h3>Click to fetch the CPU info</h3>
+              </tbody>
+            </table>
+            
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <br>
+  <br>
+  <div class="container">
+    <a class="waves-effect waves-light btn-large" onclick="fetchnetworkinfo()">Fetch Current Network Status</a>
+    <br> <br>
+    <div class="row">
+      <div class="col s12 m12">
+        <div class="card cyan darken-4">
+          <div class="card-content white-text">
+            <span class="card-title">Host Network Information</span>
+            <table>
+              <thead>
+                <tr>
+                  <th>Key</th>
+                  <th>value</th>
+                </tr>
+              </thead>
+              <tbody id="network-info">
+                <h3>Click on the button to fetch network info...</h3>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <br><br>
+  <div class="container">
+    <a class="waves-effect waves-light btn-large" onclick="fetchCurrentLoad()">Fetch Current Load Status</a>
+    <br> <br>
+    <div class="row">
+      <div class="col s12 m12">
+        <div class="card light-blue darken-4">
+          <div class="card-content white-text">
+            <span class="card-title">Host Process Load Information</span>
+            <table>
+              <thead>
+                <tr>
+                  <th>Key</th>
+                  <th>value</th>
+                </tr>
+              </thead>
+              <tbody id="load-info">
+                <h3>Click on the button to fetch current load info...</h3>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <br><br>
+  <div class="container">
+    <a class="waves-effect waves-light btn-large" onclick="fetchRunningProcesses()">Fetch Current Running Processes</a>
+    <br> <br>
+    <div class="row">
+      <div class="col s12 m12">
+        <div class="card orange darken-3">
+          <div class="card-content white-text">
+            <span class="card-title">Running processes on host</span>
+            <table>
+              <thead>
+                <tr>
+                  <th>PID</th>
+                  <th>Name</th>
+                  <th>State</th>
+                </tr>
+              </thead>
+              <tbody id="process-info">
+                <h3>Click on the button to fetch current Process info...</h3>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script>
+  function fetchRunningProcesses(){
+    document.getElementById('process-info')
+    .innerHTML = `Getting the system data....`;
+    axios.get('/processinfo')
+    .then(response => {
+      document.getElementById('process-info').innerHTML = ``;
+      let data = response.data;
+      arr = [];
+      for(let i in data.list){
+        if(i <= 100){
+          arr.push(data.list[i]);
+        }
+      }
+      arr.sort((a,b) => {
+        return a.pid > b.pid;
+      });
+      for(i in arr){
+        let html = `<tr><td>${arr[i].pid}</td><td>${arr[i].name}</td><td>${arr[i].state}</td></tr>`;
+        document.getElementById('process-info')
+        .innerHTML += html;
+      }
+    })
+    .catch(err => console.log(err));
+  }
+  function fetchsysinfo(){
+    document.getElementById('cpu-info')
+    .innerHTML = `Getting the system data....`;
+    axios.get('/sysinfo')
+    .then(response => {
+      document.getElementById('cpu-info').innerHTML = ``;
+      let data = response.data;
+      for(let i in data){
+        let html = `<tr><td>${i.charAt(0).toUpperCase()+i.slice(1)}</td><td>${JSON.stringify(data[i])}</td></tr>`;
+        document.getElementById('cpu-info')
+        .innerHTML += html;
+      }
+    })
+    .catch(err => console.log(err));
+  }
+  
+  function fetchnetworkinfo(){
+    axios.get('/netinfo')
+    .then(response => {
+      document.getElementById('network-info').innerHTML = ``;
+      let data = response.data;
+      for(let i in data){
+        let html = `<tr><td>${i.charAt(0).toUpperCase()+i.slice(1)}</td><td>${JSON.stringify(data[i])}</td></tr>`;
+        document.getElementById('network-info')
+        .innerHTML += html;
+      }
+    })
+    .catch(err => console.log(err));
+  }
+  
+  function fetchCurrentLoad(){
+    axios.get('/loadinfo')
+    .then(response => {
+      document.getElementById('load-info').innerHTML = ``;
+      let data = response.data;
+      for(let i in data){
+        if(i == "cpus") continue;
+        let html = `<tr><td>${i.charAt(0).toUpperCase()+i.slice(1)}</td><td>${JSON.stringify(data[i])}</td></tr>`;
+        document.getElementById('load-info')
+        .innerHTML += html;
+      }
+    })
+    .catch(err => console.log(err));
+  }
+  function init(){
+    fetchCurrentLoad();
+    fetchsysinfo();
+    fetchnetworkinfo();
+    fetchRunningProcesses();
+  }
+  init();
+</script>
+</html>
